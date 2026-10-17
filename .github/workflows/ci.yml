@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    env:
+      # Pin the genvm-manager release whose runner bundle contains the exact
+      # py-genlayer runner (5jycge4q...) named in the contract header, so lint,
+      # validation, and the direct test suite all resolve the same SDK.
+      GENVM_VERSION: v0.6.0-rc8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install GenLayer test toolchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt
+
+      - name: genvm-lint check (must be zero warnings)
+        run: genvm-lint check contracts/BoundReleaseReceipt.py
+
+      - name: genvm-lint validate (SDK-based semantic validation)
+        run: genvm-lint validate contracts/BoundReleaseReceipt.py
+
+      - name: Direct-mode test suite
+        run: gltest tests/direct/test_bound_release_receipt.py -v

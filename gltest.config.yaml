@@ -1,0 +1,8 @@
+# gltest configuration.
+#
+# The direct-mode test suite never touches a network -- it runs the contract
+# in-process with mocked web responses -- so only the directory paths need to be
+# declared here. Networks are intentionally left to gltest's own defaults.
+paths:
+  contracts: contracts
+  artifacts: artifacts
