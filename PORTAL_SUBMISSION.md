@@ -19,9 +19,15 @@ BoundReleaseReceipt seals a release channel — repo, policy document + its SHA-
 ## Deployed contract
 
 - Network: GenLayer Studio Devnet (Studionet)
-- Address: _pending live deployment_
-- Deploy transaction: _pending_
-- Final status: _pending_
+- Address: `0xA85721785d6d3091458CbEAa1555149db322B9ca`
+- Deploy transaction: `0x9c3c51c1beb7470a3819347c056d81638e4aefc386ca846bd02e54c815f34203`
+- Final status: `Finalized · Accepted`
+
+### Live smoke test (end-to-end, real GitHub release)
+
+- Seal opened: `seal-0` — tx `0xcaac665d10b921bef0a343bf596115646c4d20d838ce37a46d442d8b19aa5497` (finalized)
+- Attested: `receipt-0` for tag `v1.0.0` — tx `0xe7755776fc07969e60863921ae4a9faef1070955ce063dbec3ad887a724aa10a` (finalized; settlement round 0, `Accepted`, `rotations: 0`)
+- Result: fold `attested`, all five bindings `true`; `policy_sha256` re-derived by consensus equals the sealed digest `625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672`.
 
 ## Repository
 
@@ -40,6 +46,7 @@ https://github.com/Fortune9thx/bound-release-receipt
 
 - `genvm-lint check contracts/BoundReleaseReceipt.py` → Lint passed (3 checks), Validation passed (7 methods: 5 view, 2 write).
 - `gltest tests/direct/test_bound_release_receipt.py` → 40 passed.
+- Live on Studio Devnet: two finalized transactions (`open_seal` then `attest`) produced `receipt-0` with fold `attested` for a real GitHub release `v1.0.0`; settlement round 0, `Accepted`, `rotations: 0`.
 - Design rationale, non-determinism boundaries, and threat model in `docs/DESIGN.md`.
 - Rejection-pattern mapping in `docs/WHY_THIS_PASSES_REVIEW.md`.
 

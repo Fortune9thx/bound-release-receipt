@@ -4,6 +4,8 @@ A standalone [GenLayer](https://genlayer.com) Intelligent Contract primitive tha
 
 It answers one narrow, checkable question — *"is this exact tag a valid release from this sealed channel, right now?"* — without any model judgment, any confidence percentage, or any leader-trust shortcut.
 
+> **Deployed and proven live:** `0xA85721785d6d3091458CbEAa1555149db322B9ca` on GenLayer Studio Devnet. Two finalized transactions sealed this repository's own release channel and issued `receipt-0` with fold `attested` for release `v1.0.0`. Details below.
+
 ## The trust problem it closes
 
 A contract that wants to attest "this release happened, and it complied with this policy" has two ways to get it wrong:
@@ -95,7 +97,9 @@ Because `leader_fn` and `validator_fn` each do their own fetch and their own ext
 ```
 contracts/BoundReleaseReceipt.py              the contract
 tests/direct/                                 gltest direct-mode test suite (40 tests)
+scripts/live_smoke.py                         optional live open_seal + attest reproduction (key via env)
 docs/DESIGN.md                                design rationale, non-determinism boundaries, threat model
+docs/POLICY.md                                the release policy document used by the live demonstration
 docs/WHY_THIS_PASSES_REVIEW.md                mapping against known Portal rejection patterns
 PORTAL_SUBMISSION.md                          submission text for the GenLayer Portal
 SECURITY.md                                   scope and vulnerability reporting
@@ -116,6 +120,52 @@ gltest tests/direct/test_bound_release_receipt.py -v
 ```
 
 40 direct-mode tests cover: the full seal-validation surface (schema, repo, sha, author list, window, policy URL), the attested happy path, each binding-driven `rejected` path (author, asset, timing, policy-hash, tag), both required-fetch failures (`unresolved`), the replay rule (blocked after a decision, allowed after `unresolved`), a dishonest-leader disagreement and a leader-error disagreement, body-injection resistance, two independent tags on one seal, the view error surface, and the pure deterministic helpers. `genvm-lint check` passes with zero warnings and `genvm-lint validate` passes semantic validation.
+
+## Live deployment on GenLayer Studio Devnet
+
+The contract is deployed and was exercised end-to-end — two finalized consensus transactions — against a *real* GitHub release, not a mock.
+
+| | |
+|---|---|
+| Network | GenLayer Studio Devnet (`https://studio-dev.genlayer.com/api`) |
+| Contract address | `0xA85721785d6d3091458CbEAa1555149db322B9ca` |
+| Deploy transaction | `0x9c3c51c1beb7470a3819347c056d81638e4aefc386ca846bd02e54c815f34203` — `Finalized · Accepted` |
+
+The smoke test sealed this repository's own release channel (policy document `docs/POLICY.md`, `required_asset = provenance.json`) and then attested release `v1.0.0`:
+
+| | |
+|---|---|
+| Seal | `seal-0` — tx `0xcaac665d10b921bef0a343bf596115646c4d20d838ce37a46d442d8b19aa5497` (finalized) |
+| Attest | `receipt-0` — tx `0xe7755776fc07969e60863921ae4a9faef1070955ce063dbec3ad887a724aa10a` (finalized, round-0 outcome `Accepted`) |
+| Fold | **`attested`** — all five bindings `true` |
+
+```json
+{
+  "schema": "brr.receipt.v1",
+  "receipt_id": "receipt-0",
+  "seal_id": "seal-0",
+  "repo": "Fortune9thx/bound-release-receipt",
+  "tag": "v1.0.0",
+  "fold": "attested",
+  "release_ok": true,
+  "policy_ok": true,
+  "extracted": {
+    "tag": "v1.0.0",
+    "author": "Fortune9thx",
+    "published_at": 1792214263,
+    "assets": ["provenance.json"],
+    "body_sha256": "0b2c682d6f8b434687df13cba3a96ac16dc5323ad6925d87262fd0cf938fddb2"
+  },
+  "policy_sha256": "625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672",
+  "sealed_policy_sha256": "625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672",
+  "bindings": {"tag": true, "author": true, "timing": true, "asset": true, "policy": true},
+  "submitted_by": "0xC6E6d3b2acCaECeCeB40Ad4bD3dF123DDCB4e537"
+}
+```
+
+This is the primitive working live: the policy document's SHA-256 (`625bc5d6…b672`, the digest of the committed `docs/POLICY.md` blob) is bound into the receipt as `sealed_policy_sha256` and re-derived by consensus as `policy_sha256`, and the release's author, timing, and required asset were all re-extracted by every validator from the live GitHub release document rather than trusted from the leader.
+
+The same procedure is reproducible with [`scripts/live_smoke.py`](scripts/live_smoke.py), which takes the signing key from the `BRR_PRIVATE_KEY` environment variable and never stores a secret in the repository.
 
 ## A note on the SDK header
 

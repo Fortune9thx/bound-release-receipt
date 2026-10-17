@@ -102,7 +102,48 @@ Always gate on `record["fold"]`. An `unresolved` receipt is stored but is **not*
 
 ## 9. Live network observation
 
-To be recorded after the GenLayer Studio Devnet deployment and live smoke test (see [PORTAL_SUBMISSION.md](../PORTAL_SUBMISSION.md)). This section will state the deployed address, the deploy transaction hash and its finality, the live `open_seal`/`attest` transactions, and the exact receipt JSON read back — including any round that settled by validator timeout rather than unanimous agreement, reported honestly.
+The contract was deployed to GenLayer Studio Devnet and exercised with two finalized consensus transactions against a real GitHub release.
+
+- **Network:** GenLayer Studio Devnet (`https://studio-dev.genlayer.com/api`).
+- **Contract address:** `0xA85721785d6d3091458CbEAa1555149db322B9ca`.
+- **Deploy transaction:** `0x9c3c51c1beb7470a3819347c056d81638e4aefc386ca846bd02e54c815f34203`, settled `Finalized · Accepted`.
+
+The demonstration sealed this repository's own release channel — policy document `docs/POLICY.md`, whose committed blob hashes to `625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672`, with `required_asset = provenance.json` and `allowed_authors = ["Fortune9thx"]` — and then attested release `v1.0.0`:
+
+| Step | Transaction | Rounds / outcome |
+|---|---|---|
+| `open_seal` | `0xcaac665d10b921bef0a343bf596115646c4d20d838ce37a46d442d8b19aa5497` | finalized, `Accepted` |
+| `attest(seal-0, v1.0.0)` | `0xe7755776fc07969e60863921ae4a9faef1070955ce063dbec3ad887a724aa10a` | finalized; settlement round 0, `Accepted`, `rotations: 0` |
+
+The settlement record for the `attest` transaction shows `round 0`, `rule: normal`, `outcome: Accepted`, `rotations: 0` — i.e. **the leader and every validator agreed on the first round**, with no rotation and no timeout. This is the expected best case: the release document and the policy document are stable, so independent re-execution converges immediately.
+
+The exact receipt read back with `get_receipt("receipt-0")`:
+
+```json
+{
+  "bindings": {"asset": true, "author": true, "policy": true, "tag": true, "timing": true},
+  "extracted": {
+    "assets": ["provenance.json"],
+    "author": "Fortune9thx",
+    "body_sha256": "0b2c682d6f8b434687df13cba3a96ac16dc5323ad6925d87262fd0cf938fddb2",
+    "published_at": 1792214263,
+    "tag": "v1.0.0"
+  },
+  "fold": "attested",
+  "policy_ok": true,
+  "policy_sha256": "625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672",
+  "receipt_id": "receipt-0",
+  "release_ok": true,
+  "repo": "Fortune9thx/bound-release-receipt",
+  "schema": "brr.receipt.v1",
+  "seal_id": "seal-0",
+  "sealed_policy_sha256": "625bc5d672cb90a54822c1040fc6481a5b6dc5f8e4d29a70a3f6fd3df6bdb672",
+  "submitted_by": "0xC6E6d3b2acCaECeCeB40Ad4bD3dF123DDCB4e537",
+  "tag": "v1.0.0"
+}
+```
+
+`policy_sha256` (re-derived by consensus) equals `sealed_policy_sha256` (the digest committed into the seal) because both are the SHA-256 of the same committed `docs/POLICY.md` bytes; the `policy` binding is `true` for exactly that reason. No round in this run settled by validator timeout, so nothing negative needs to be reported for it.
 
 ## 10. SDK layout notes
 
